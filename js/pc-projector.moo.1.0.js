@@ -32,7 +32,7 @@ var Projector = new Class(
     preload_priority: 'FIRST', // Optional: (String) Specifies the preload and display priority rules.
     
     autoplay: true,        // Optional: (Boolean) If false, manual paging is required to transition between slides. Acts as an state trigger (see appendix).
-    pause_on_hover: false, // Optional: (Boolean) If true, will pause the slideshow on mouseover when autoplay is active.
+    pause_on_hover: false, // Optional: (Boolean) If true, will pause the slideshow on mouseover when autoplay is active. Really, both this and pause on change should be the responsibility of the implementer and I don't want this to set precedent for things that shouldn't be Projector's responsibility creeping in, but we'll see.
     pause_on_change: true, // Optional: (Boolean) If false, manual paging will reset, but not stop autoplay.
     shuffle: false,        // Optional: (Boolean) If true will randomize the slide queue prior to load.
     display_duration: 10,  // Optional: (Int) Time is seconds between each transition when autoplay is active.
@@ -237,6 +237,8 @@ var Projector = new Class(
     {
       this.preloader().call(this);
     }
+    
+    return this;
   },
 
   initLifecycle: function ()
@@ -285,7 +287,7 @@ var Projector = new Class(
       // First file: Load the first slide independently followed by the remaining files.
       case 'FIRST':
         this.log('Loading using FIRST (file) priority rules.');
-
+        
         this.consume(this.queue(), true);
         
         this.stack().pick().addEvent(ProjectorNS.COMPLETE, function ()
@@ -295,7 +297,7 @@ var Projector = new Class(
             slide.load();
           });
         }.bind(this));
-
+        
         this.stack().pick().load();
 
         break;
@@ -811,7 +813,7 @@ var ProjectorNS =
 
     load: function ()
     {
-      var self = this, images;
+      var images;
 
       this.log('Loading: ' + this.target());
 
@@ -827,31 +829,51 @@ var ProjectorNS =
         this.element($(this.target()));
       }
 
-      // Finally, we assume that the target refers to a remote image
+      // Where the element is already part of the document...
+      if (this.element())
+      {
+        // ...and it is hidden
+        if (this.element().getStyle('display') === 'none')
+        {
+          // Pull it from the document
+          this.element().dispose();
+        
+          /**
+           * Due to an issue in Internet Explorer wherein an image element's load event will never fire
+           * if it or it's parent has been 'disposed', we need to create new versions to replace the
+           * originals.
+           */
+          if (this.element().get('tag').toLowerCase() === 'img')
+          {
+            images = [this.element(this.element().clone(true, true))];
+          }
+          else
+          {
+            images = this.element().getElements('img');
+
+            images.each(function (image)
+            {
+              var clone = image.clone(true, true);
+
+              clone.replaces(image);
+
+              image.destroy();
+            });
+          }
+        }
+      }
+
+      // Else, we assume that the target refers to a remote image
       else
       {
-        this.element(new Element('img', { 'src':this.target() }));
+        images = [this.element(new Element('img', { 'src':this.target() }))];
       }
-
-      // Add display class if provided
-      if (this.className())
-      {
-        this.element().addClass(this.className());
-      }
-      
-      // If the element is hidden, pull it from the stage
-      if (this.element().getStyle('display') === 'none')
-      {
-        this.element().dispose();
-      }
-
-      // Attach an on load listener to all images within the supplied element the element itself
-      images = this.element().get('tag') === 'img'? [this.element()]: this.element().getElements('img');
 
       if (images.length > 0)
       { 
         images.each(function (image)
         {
+          // Set rendering priority rules
           switch (this.renderingPriority())
           {
             case 'PERFORMANCE':
@@ -872,17 +894,21 @@ var ProjectorNS =
 
               break;
           }
-
+          
+          // Where the image has not been cached
           if (!image.complete)
           {
+            // Add on load handler
             image.addEvent('load', function (event)
             {
-              self.fireEvent(ProjectorNS.LOADED, self);
-            });
+              this.fireEvent(ProjectorNS.LOADED, this);
+            }.bind(this));
           }
+
+          // Else fire loaded event immediately
           else
           {
-            self.fireEvent(ProjectorNS.LOADED, self);
+            this.fireEvent(ProjectorNS.LOADED, this);
           }
         }.bind(this));
       }
@@ -892,6 +918,9 @@ var ProjectorNS =
       {
         this.fireEvent(ProjectorNS.LOADED, this);
       }
+
+      // Add display class if provided
+      this.element().addClass(this.className());
 
       return this;
     },
