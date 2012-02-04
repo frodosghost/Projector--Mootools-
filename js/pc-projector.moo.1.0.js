@@ -468,6 +468,14 @@ var Projector = new Class(
     {
       this.play(queued, true);
     }
+    else
+    {
+      this.fireEvent(ProjectorNS.WILL_TRANSITION_IN, [queued, this]);
+
+      this.positionAndScaleSlide(this.active(queued));
+
+      this.fireEvent(ProjectorNS.HAS_TRANSITIONED_IN, [queued, this]);
+    }
 
     return this;
   },
@@ -813,7 +821,7 @@ var ProjectorNS =
 
     load: function ()
     {
-      var images;
+      var images = [];
 
       this.log('Loading: ' + this.target());
 
