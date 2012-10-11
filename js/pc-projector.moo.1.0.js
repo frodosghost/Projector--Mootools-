@@ -341,7 +341,7 @@ var Projector = new Class({
                 }
             }
         }
-        
+
         // Parameters already passed in as object
         else {
             parameters = payload;
@@ -795,7 +795,7 @@ var ProjectorNS = {
             if (images.length > 0) {
                 images.each(function(image) {
                     // Set rendering priority rules
-                    switch (this.renderingPriority()) {
+                    switch (this.renderingPriority) {
                     case 'PERFORMANCE':
                         image.setStyles({
                             '-ms-interpolation-mode': 'nearest-neighbor',
