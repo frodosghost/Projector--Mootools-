@@ -373,10 +373,10 @@ var Projector = new Class({
         });
 
         switch (this.preloadPriority()) {
-/*
-        Adjacent requires the first, second and last slides be loaded for display and as
-        remaining slides are lazy loaded, stack_has_loaded will be set to true also.
-      */
+        /*
+         * Adjacent requires the first, second and last slides be loaded for display and as
+         * remaining slides are lazy loaded, stack_has_loaded will be set to true also.
+         */
         case 'ADJACENT':
             this.log('Auditing using ADJACENT priority rules.');
 
@@ -386,10 +386,10 @@ var Projector = new Class({
 
             break;
 
-/*
-        Full stack requires all slides to have complete and therefore has the same
-        requirements as stack_has_loaded.
-      */
+        /*
+         * Full stack requires all slides to have complete and therefore has the same
+         * requirements as stack_has_loaded.
+         */
         case 'STACK':
             this.log('Auditing using STACK priority rules.');
 
@@ -397,9 +397,9 @@ var Projector = new Class({
 
             break;
 
-/*
-        Default cases only require that the stack has content.
-      */
+        /*
+         * Default cases only require that the stack has content.
+         */
         default:
             this.log('Auditing using default priority rules.');
 
@@ -482,17 +482,17 @@ var Projector = new Class({
 
         this.log('Setting autoplay timer.');
 
-        if (delta >= this.displayDuration()) {
+        if (delta >= this.accessor('display_duration')) {
             this.play();
         } else {
-            this.timeout(this.play.delay((this.displayDuration() - delta) * 1000, this));
+            this.timeout(this.play.delay((this.accessor('display_duration') - delta) * 1000, this));
         }
 
         return this;
     },
 
     initPauseOnHover: function() {
-        if (this.pauseOnHover()) {
+        if (this.accessor('pause_on_hover')) {
             this.container().element().addEvent('mouseover', this.pause.bind(this));
             this.container().element().addEvent('mouseout', this.initTimer.pass([null, true], this));
         }
@@ -517,7 +517,7 @@ var Projector = new Class({
             this.active(ProjectorNS[queued.transition() || this.transition()](this, this.active(), queued));
 
             if (!bypass_on_pause_check && this.autoplay()) {
-                this.timeout(this.play.delay(this.displayDuration() * 1000, this));
+                this.timeout(this.play.delay(this.accessor('display_duration') * 1000, this));
             }
         }
 
@@ -834,7 +834,7 @@ var ProjectorNS = {
             }
 
             // Add display class if provided
-            this.element().addClass(this.className());
+            this.element().addClass(this.accessor('class_name'));
 
             return this;
         },
@@ -965,7 +965,7 @@ var ProjectorNS = {
 
         // Init the inbound FX
         fx = new Fx.Morph(inbound.element(), {
-            'duration': projector.transitionDuration() * 1000,
+            'duration': projector.accessor('transition_duration') * 1000,
             'transition': inbound.easing() || projector.easing()
         });
 
@@ -1007,13 +1007,13 @@ var ProjectorNS = {
 
         // Outbound transition
         outbound_fx = new Fx.Morph(placeholder || outbound.element(), {
-            'duration': !placeholder ? (projector.transitionDuration() * 1000) / 2 : 0,
+            'duration': !placeholder ? (projector.accessor('transition_duration') * 1000) / 2 : 0,
             'transition': inbound.easing() || projector.easing()
         });
 
         // Inbound transition
         inbound_fx = new Fx.Morph(inbound.element(), {
-            'duration': (projector.transitionDuration() * 1000) / 2,
+            'duration': (projector.accessor('transition_duration') * 1000) / 2,
             'transition': inbound.easing() || projector.easing()
         });
 
